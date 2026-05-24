@@ -1,6 +1,6 @@
 [package]
 name = "termax"
-version = "0.71.1"
+version = "0.71.2"
 description = "TerMax — personal fork of Terax, an open-source AI-native terminal emulator"
 authors = ["RiotBeard", "crynta (original Terax author)"]
 license = "Apache-2.0"

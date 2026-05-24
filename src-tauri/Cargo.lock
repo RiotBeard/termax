@@ -4960,7 +4960,7 @@ dependencies = [
 
 [[package]]
 name = "termax"
-version = "0.71.1"
+version = "0.71.2"
 dependencies = [
  "bytes",
  "dirs 5.0.1",
