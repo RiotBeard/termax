@@ -9,6 +9,14 @@
     <img src="https://img.shields.io/badge/license-Apache--2.0-green" alt="license" />
     <img src="https://img.shields.io/badge/platform-macOS%20(Apple%20Silicon)-lightgrey" alt="platform" />
   </p>
+
+  <p>
+    <a href="https://terax.app">Website</a>
+    ·
+    <a href="https://terax.app/docs">Docs</a>
+    ·
+    <a href="https://github.com/crynta/Terax-website">Website's source code</a>
+  </p>
 </div>
 
 ---
@@ -56,8 +64,10 @@ pnpm tauri build --target aarch64-apple-darwin  # production bundle
 
 **Checks**
 ```sh
-pnpm exec tsc --noEmit          # frontend type-check
-cd src-tauri && cargo clippy    # Rust lint
+pnpm exec tsc --noEmit                                            # frontend type-check
+pnpm test                                                         # frontend tests
+cd src-tauri && cargo clippy --all-targets --locked -D warnings   # Rust lint
+cd src-tauri && cargo test --locked                               # Rust tests
 ```
 
 ## Syncing with upstream

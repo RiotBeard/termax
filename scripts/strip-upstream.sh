@@ -55,6 +55,13 @@ sed -i '' 's/^name = "terax"$/name = "termax"/' src-tauri/Cargo.toml
 sed -i '' 's/^name = "terax_lib"$/name = "termax_lib"/' src-tauri/Cargo.toml
 sed -i '' 's/terax_lib::run()/termax_lib::run()/' src-tauri/src/main.rs
 
+# Upstream integration tests import the lib crate by its upstream name.
+echo "→ Renaming terax_lib imports in src-tauri/tests"
+if [ -d src-tauri/tests ]; then
+  find src-tauri/tests -type f -name "*.rs" -print0 \
+    | xargs -0 sed -i '' -e 's/terax_lib/termax_lib/g'
+fi
+
 echo "→ Patching HTML titles"
 sed -i '' 's|<title>Terax</title>|<title>TerMax</title>|' index.html
 [ -f settings.html ] && sed -i '' 's|<title>Terax — Settings</title>|<title>TerMax — Settings</title>|' settings.html
@@ -62,6 +69,17 @@ sed -i '' 's|<title>Terax</title>|<title>TerMax</title>|' index.html
 echo "→ Rebranding remaining Terax strings in src/"
 find src -type f \( -name "*.ts" -o -name "*.tsx" -o -name "*.html" \) -print0 \
   | xargs -0 sed -i '' -e 's/Terax/TerMax/g' -e 's/TERAX/TERMAX/g' -e 's/terax/termax/g'
+
+# The frontend rebrand above renames Tauri event-channel listeners (e.g.
+# listen("terax:agent-signal") -> "termax:agent-signal"). The Rust emitters in
+# src-tauri/src are intentionally NOT bulk-rebranded (thread names, .cache/terax,
+# TERAX_TERMINAL, the notify;Terax; OSC marker are Rust<->shell internal and
+# self-consistent). But the quoted cross-process event-channel literals must move
+# in lockstep with the frontend, or events like agent notifications and
+# settings-tab deep-links silently break.
+echo "→ Aligning Rust Tauri event channels with the rebranded frontend"
+find src-tauri/src -type f -name "*.rs" -print0 \
+  | xargs -0 sed -i '' -e 's/"terax:/"termax:/g'
 
 if [ -f src/modules/theme/themes/terax-default.ts ]; then
   echo "→ Renaming theme file terax-default.ts → termax-default.ts"

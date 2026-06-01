@@ -5,6 +5,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -19,7 +20,10 @@ import type { SidebarPosition, ThemePref } from "@/modules/settings/store";
 import {
   TERMINAL_FONT_SIZES,
   TERMINAL_SCROLLBACK_PRESETS,
+  setAgentNotifications,
   setAutostart,
+  setEditorAutoSave,
+  setEditorAutoSaveDelay,
   setRestoreWindowState,
   setShowHidden,
   setSidebarPosition,
@@ -39,7 +43,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { disable, enable, isEnabled } from "@tauri-apps/plugin-autostart";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { SectionHeader } from "../components/SectionHeader";
 import { SettingRow } from "../components/SettingRow";
 
@@ -57,6 +61,9 @@ const LETTER_SPACINGS = [-4, -3, -2, -1, 0, 1, 2, 3, 4] as const;
 const ZOOM_MIN = 0.5;
 const ZOOM_MAX = 2.0;
 const ZOOM_STEP = 0.05;
+const AUTO_SAVE_STEP = 100;
+const AUTO_SAVE_MIN = 100;
+const AUTO_SAVE_MAX = 60000;
 
 export function GeneralSection() {
   const { mode, setMode } = useTheme();
@@ -64,6 +71,8 @@ export function GeneralSection() {
   const autostart = usePreferencesStore((s) => s.autostart);
   const restoreWindowState = usePreferencesStore((s) => s.restoreWindowState);
   const vimMode = usePreferencesStore((s) => s.vimMode);
+  const editorAutoSave = usePreferencesStore((s) => s.editorAutoSave);
+  const editorAutoSaveDelay = usePreferencesStore((s) => s.editorAutoSaveDelay);
   const showHidden = usePreferencesStore((s) => s.showHidden);
   const terminalWebglEnabled = usePreferencesStore(
     (s) => s.terminalWebglEnabled,
@@ -76,6 +85,7 @@ export function GeneralSection() {
   const terminalScrollback = usePreferencesStore((s) => s.terminalScrollback);
   const zoomLevel = usePreferencesStore((s) => s.zoomLevel);
   const sidebarPosition = usePreferencesStore((s) => s.sidebarPosition);
+  const agentNotifications = usePreferencesStore((s) => s.agentNotifications);
 
   useEffect(() => {
     let alive = true;
@@ -177,6 +187,21 @@ export function GeneralSection() {
             onCheckedChange={(v) => void setVimMode(v)}
           />
         </SettingRow>
+        <SettingRow
+          title="Auto save"
+          description="Automatically save files after a delay when changes are detected."
+        >
+          <Switch
+            checked={editorAutoSave}
+            onCheckedChange={(v) => void setEditorAutoSave(v)}
+          />
+        </SettingRow>
+        {editorAutoSave && (
+          <AutoSaveDelayInput
+            value={editorAutoSaveDelay}
+            onChange={(v) => void setEditorAutoSaveDelay(v)}
+          />
+        )}
       </div>
 
       <div className="flex flex-col gap-2">
@@ -305,6 +330,19 @@ export function GeneralSection() {
       </div>
 
       <div className="flex flex-col gap-2">
+        <Label>Agents</Label>
+        <SettingRow
+          title="Coding agent notifications"
+          description="Alert when Claude Code or Codex running in a terminal needs your input or finishes. Desktop notification when TerMax is unfocused, in-app otherwise."
+        >
+          <Switch
+            checked={agentNotifications}
+            onCheckedChange={(v) => void setAgentNotifications(v)}
+          />
+        </SettingRow>
+      </div>
+
+      <div className="flex flex-col gap-2">
         <Label>Startup</Label>
         <div className="flex flex-col gap-2">
           <SettingRow
@@ -369,3 +407,58 @@ function SidebarPositionToggle({ value }: { value: SidebarPosition }) {
     </div>
   );
 }
+
+function AutoSaveDelayInput({
+  value,
+  onChange,
+}: {
+  value: number;
+  onChange: (v: number) => void;
+}) {
+  const [draft, setDraft] = useState(String(value));
+
+  useEffect(() => {
+    setDraft(String(value));
+  }, [value]);
+
+  const commit = () => {
+    const n = Number(draft);
+    if (!Number.isFinite(n)) {
+      setDraft(String(value));
+      return;
+    }
+    const clamped = Math.min(
+      AUTO_SAVE_MAX,
+      Math.max(AUTO_SAVE_MIN, Math.round(n)),
+    );
+    setDraft(String(clamped));
+    if (clamped !== value) onChange(clamped);
+  };
+
+  return (
+    <SettingRow
+      title="Auto save delay"
+      description="Delay before unsaved changes are saved automatically."
+    >
+      <div className="flex items-center gap-2">
+        <Input
+          type="number"
+          min={AUTO_SAVE_MIN}
+          max={AUTO_SAVE_MAX}
+          step={AUTO_SAVE_STEP}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={commit}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.currentTarget.blur();
+            }
+          }}
+          className="h-8 w-20 rounded-md border border-border bg-background px-2.5 text-right text-[12px] md:text-[12px] tabular-nums outline-none focus:border-foreground/40 focus-visible:ring-0 focus-visible:border-foreground/40 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+        />
+        <span className="text-[11px] text-muted-foreground">ms</span>
+      </div>
+    </SettingRow>
+  );
+}
+

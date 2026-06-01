@@ -48,7 +48,7 @@ export function AboutSection() {
             {name}
           </span>
           <span className="text-[11px] text-muted-foreground">
-            Personal fork of Terax — AI-native terminal emulator
+            Personal fork of TerMax — AI-native terminal emulator
           </span>
           <span className="mt-1 font-mono text-[11px] text-muted-foreground">
             v{version || "—"}
